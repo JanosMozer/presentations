@@ -15,7 +15,7 @@ def read_file(filepath):
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     # Set the target answers directory here (change to 'llm_answers_2' if needed)
-    answers_dir = os.path.join(script_dir, 'llm_answers_2')
+    answers_dir = os.path.join(script_dir, 'llm_answers_1')
 
     # 1. Read all text files from the specified directory
     all_lines = []
