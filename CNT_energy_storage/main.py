@@ -4,28 +4,43 @@ from ase import Atoms
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-# --- Morse potential parameters for C–C bond ---
-# Typical values (from literature / MM3 force fields)
-D_e = 6.0  # eV, bond dissociation energy
-a = 2.0    # 1/Å, stiffness parameter
-r0 = 1.42  # Å, equilibrium bond length (C–C in graphene)
+# --- Simulation Parameters ---
+# --- CNT Geometry ---
+n = 6  # Chirality index n
+m = 6  # Chirality index m
+length = 4  # Number of unit cells along the tube axis
+
+# --- Mechanical Deformation ---
+twist_angle = 0.05  # Radians of twist per Ångström along the z-axis
+
+# --- Morse Potential Parameters for C-C Bond ---
+# These parameters define the Morse potential for the Carbon-Carbon bond interactions.
+# The Morse potential is a model for the potential energy of a diatomic molecule.
+D_e = 6.0  # eV, bond dissociation energy. This is the depth of the potential well.
+a = 2.0    # 1/Å, stiffness parameter. This controls the width of the potential well.
+r0 = 1.42  # Å, equilibrium bond length. The distance between atoms at which the potential energy is at a minimum.
+
+# --- Energy Calculation ---
+cutoff = 2.0 # Å, cutoff distance for considering atomic interactions. 
+             # Bonds are only calculated between atoms within this distance.
+
 
 def morse_potential(r):
     """Return Morse potential energy for distance r (in Å)."""
     return D_e * (1 - np.exp(-a * (r - r0)))**2 - D_e
 
 # --- CNT builder ---
-def build_cnt(n=6, m=6, length=4):
+def build_cnt(n, m, length):
     """
     Build a CNT using ASE.
     n, m : chirality indices
     length : number of unit cells along tube axis
     """
-    cnt = nanotube(n, m, length, bond=1.42)
+    cnt = nanotube(n, m, length, bond=r0)
     return cnt
 
 # --- Apply torsional twist ---
-def twist_cnt(cnt: Atoms, twist_angle=0.1):
+def twist_cnt(cnt: Atoms, twist_angle):
     """
     Twist CNT around its z-axis.
     twist_angle : radians of twist per Å along z
@@ -47,7 +62,7 @@ def twist_cnt(cnt: Atoms, twist_angle=0.1):
     return cnt
 
 # --- Compute total energy from Morse potential ---
-def compute_energy(cnt: Atoms, cutoff=2.0):
+def compute_energy(cnt: Atoms, cutoff):
     positions = cnt.get_positions()
     energy = 0.0
     bonds = []
@@ -80,13 +95,13 @@ def plot_cnt(cnt: Atoms, bonds, title="CNT Structure"):
 # --- Main execution ---
 if __name__ == "__main__":
     # Build CNT
-    cnt = build_cnt(n=6, m=6, length=4)
+    cnt = build_cnt(n=n, m=m, length=length)
 
     # Twist CNT
-    cnt_twisted = twist_cnt(cnt, twist_angle=0.05)
+    cnt_twisted = twist_cnt(cnt, twist_angle=twist_angle)
 
     # Compute energy
-    energy, bonds = compute_energy(cnt_twisted)
+    energy, bonds = compute_energy(cnt_twisted, cutoff=cutoff)
     print(f"Stored torsional energy = {energy:.4f} eV")
 
     # Plot
