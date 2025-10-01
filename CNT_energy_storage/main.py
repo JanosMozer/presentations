@@ -7,37 +7,25 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.colors import Normalize
 from matplotlib.cm import coolwarm
 
-# --- Simulation Parameters ---
-# --- CNT Geometry ---
 n = 6; m = 6; length = 10
-
-# --- Morse Potential Parameters (more realistic) ---
 D_e = 7.37; a = 2.625; r0 = 1.42
-
-# --- Mechanical Deformation ---
 num_frames = 120
-max_twist_rate = 0.1
+max_twist_rate = 0.1  # rad/Å
 twist_rates = np.linspace(0, max_twist_rate, num_frames)
-
-# --- Bond Breaking/Reforming Parameters ---
-bond_break_distance = 1.75  # Å, ~23% strain
+bond_break_distance = 1.75  # Å
 bond_reform_distance = 1.6   # Å
-bond_break_region = 0.2     # Å, for probabilistic breaking
-cutoff = 2.0                # Å, initial neighbor finding
+bond_break_region = 0.2     # Å
+cutoff = 2.0                # Å
 
 def morse_potential(r):
-    """Return Morse potential energy for distance r (in Å), shifted so r0 has 0 energy."""
     return D_e * (1 - np.exp(-a * (r - r0)))**2
 
-# Fixed, physical energy scale for color normalization
 ENERGY_AT_BREAK = morse_potential(bond_break_distance)
 
 def build_cnt(n, m, length):
-    """Build a CNT using ASE with proper vacuum."""
     return nanotube(n, m, length, bond=r0, vacuum=10.0)
 
 def twist_cnt(cnt: Atoms, twist_rate):
-    """Twist CNT around its central axis."""
     positions = cnt.get_positions()
     x_center, y_center = np.mean(positions[:, :2], axis=0)
     z_min = np.min(positions[:, 2])
@@ -54,34 +42,30 @@ def twist_cnt(cnt: Atoms, twist_rate):
     return cnt
 
 def compute_energy(cnt: Atoms, cutoff, previous_bonds=None):
-    """
-    Computes energy with realistic bond breaking/reforming, enforcing a 3-bond limit.
-    """
     positions = cnt.get_positions()
     num_atoms = len(cnt)
     
-    # --- Initial Frame ---
     if previous_bonds is None:
         active_bonds = [{'indices': (i, j), 'energy': morse_potential(np.linalg.norm(positions[i] - positions[j]))}
                         for i in range(num_atoms) for j in range(i + 1, num_atoms)
                         if np.linalg.norm(positions[i] - positions[j]) < cutoff]
         return sum(b['energy'] for b in active_bonds), active_bonds, active_bonds, {'broken': 0, 'reformed': 0, 'total': len(active_bonds)}
 
-    # --- Subsequent Frames ---
     surviving_bonds, viz_bonds = [], []
     broken_bonds_count, reformed_bonds_count = 0, 0
     atom_bond_counts = np.zeros(num_atoms, dtype=int)
-
+    
+    surviving_indices = set()
     for bond in previous_bonds:
         i, j = bond['indices']
         r = np.linalg.norm(positions[i] - positions[j])
-        
         is_stretched = r > r0 and r > (bond_break_distance - bond_break_region)
         breaks = is_stretched and (r >= bond_break_distance or np.random.random() < (r - (bond_break_distance - bond_break_region)) / bond_break_region)
         
         if not breaks:
             surviving_bonds.append({'indices': (i, j), 'energy': morse_potential(r)})
             atom_bond_counts[i] += 1; atom_bond_counts[j] += 1
+            surviving_indices.add(tuple(sorted((i,j))))
         else:
             broken_bonds_count += 1
             viz_bonds.append({'indices': (i, j), 'status': 'broken'})
@@ -89,8 +73,7 @@ def compute_energy(cnt: Atoms, cutoff, previous_bonds=None):
     potential_new = sorted([
         {'indices': (i, j), 'distance': np.linalg.norm(positions[i] - positions[j])}
         for i in range(num_atoms) for j in range(i + 1, num_atoms)
-        if atom_bond_counts[i] < 3 and atom_bond_counts[j] < 3 and
-           tuple(sorted((i, j))) not in {tuple(sorted(b['indices'])) for b in surviving_bonds} and
+        if tuple(sorted((i, j))) not in surviving_indices and 
            np.linalg.norm(positions[i] - positions[j]) < bond_reform_distance
     ], key=lambda x: x['distance'])
     
