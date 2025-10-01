@@ -31,7 +31,8 @@ cutoff = 2.0 # Å, cutoff distance for considering atomic interactions.
 
 def morse_potential(r):
     """Return Morse potential energy for distance r (in Å)."""
-    return D_e * (1 - np.exp(-a * (r - r0)))**2 - D_e
+    # Shift so that equilibrium bond (r0) has 0 energy
+    return D_e * (1 - np.exp(-a * (r - r0)))**2
 
 # --- CNT builder ---
 def build_cnt(n, m, length):

@@ -13,7 +13,7 @@ m = 6  # Chirality index m
 length = 10  # Number of unit cells along the tube axis
 
 # --- Mechanical Deformation ---
-twist_angle = 0.08  # Radians of twist per Ångström along the z-axis
+twist_angle = 0  # Radians of twist per Ångström along the z-axis
 
 # --- Morse Potential Parameters for C-C Bond ---
 D_e = 6.0  # eV, bond dissociation energy
@@ -25,7 +25,8 @@ cutoff = 2.0 # Å, cutoff distance for considering atomic interactions
 
 def morse_potential(r):
     """Return Morse potential energy for distance r (in Å)."""
-    return D_e * (1 - np.exp(-a * (r - r0)))**2 - D_e
+    # Shift so that equilibrium bond (r0) has 0 energy
+    return D_e * (1 - np.exp(-a * (r - r0)))**2
 
 def build_cnt(n, m, length):
     """Build a CNT using ASE."""
@@ -70,22 +71,10 @@ def plot_cnt(ax, cnt: Atoms, bonds, title="CNT Structure"):
     ax.clear()
     ax.scatter(x, y, z, c='k', s=20)
 
-    if bonds:
-        energies = [b['energy'] for b in bonds]
-        min_energy = min(energies) if energies else 0.0
-        max_energy = max(energies) if energies else 1.0
-        
-        # Handle case where all energies are the same
-        if min_energy == max_energy:
-            max_energy = min_energy + 1e-6
-        
-        norm = Normalize(vmin=min_energy, vmax=max_energy)
-
-        for bond in bonds:
-            i, j = bond['indices']
-            energy = bond['energy']
-            color = coolwarm(norm(energy))
-            ax.plot([x[i], x[j]], [y[i], y[j]], [z[i], z[j]], color=color, lw=1.5)
+    # Draw all bonds in blue without energy-based coloring
+    for bond in bonds:
+        i, j = bond['indices']
+        ax.plot([x[i], x[j]], [y[i], y[j]], [z[i], z[j]], color='blue', lw=1.5)
 
     ax.set_xlabel("X (Å)")
     ax.set_ylabel("Y (Å)")
