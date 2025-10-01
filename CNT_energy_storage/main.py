@@ -9,13 +9,15 @@ from matplotlib.cm import coolwarm
 
 # --- Simulation Parameters ---
 # --- CNT Geometry ---
-n = 6  # Chirality index n
+n = 6 # Chirality index n
 m = 6  # Chirality index m
-length = 4  # Number of unit cells along the tube axis
+length = 10  # Number of unit cells along the tube axis
 
 # --- Mechanical Deformation ---
 twist_angle = 0.05  # Radians of twist per Ångström along the z-axis
-twist_angles = np.linspace(0, 0.1, 50) # A range of twist angles for the simulation
+max_twist = 0.15  # Maximum twist angle for simulation
+num_frames = 60   # Number of frames for animation
+twist_angles = np.linspace(0, max_twist, num_frames) # A range of twist angles for the simulation
 
 # --- Morse Potential Parameters for C-C Bond ---
 # These parameters define the Morse potential for the Carbon-Carbon bond interactions.
@@ -41,7 +43,7 @@ def build_cnt(n, m, length):
     n, m : chirality indices
     length : number of unit cells along tube axis
     """
-    cnt = nanotube(n, m, length, bond=r0)
+    cnt = nanotube(n, m, length, bond=r0, vacuum=10.0)
     return cnt
 
 # --- Apply torsional twist ---
@@ -136,13 +138,23 @@ if __name__ == "__main__":
             max_bond_energy = max(max_bond_energy, max(b['energy'] for b in bonds))
 
     # --- Plot Energy vs. Twist Angle ---
-    plt.figure()
-    plt.plot(twist_angles, total_energies)
-    plt.xlabel("Twist Angle (rad/Å)")
-    plt.ylabel("Stored Torsional Energy (eV)")
-    plt.title("Energy vs. Twist Angle for CNT")
-    plt.grid(True)
-    plt.savefig("CNT_energy_storage/output/energy_vs_twist.png")
+    plt.figure(figsize=(10, 6))
+    plt.plot(twist_angles, total_energies, 'b-', linewidth=2, marker='o', markersize=4)
+    plt.xlabel("Twist Angle (rad/Å)", fontsize=12)
+    plt.ylabel("Stored Torsional Energy (eV)", fontsize=12)
+    plt.title(f"Energy vs. Twist Angle for CNT ({n},{m}) - Length: {length} units", fontsize=14)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    
+    # Add some statistics to the plot
+    max_energy_idx = np.argmax(total_energies)
+    plt.annotate(f'Max: {total_energies[max_energy_idx]:.2f} eV\nat {twist_angles[max_energy_idx]:.3f} rad/Å', 
+                xy=(twist_angles[max_energy_idx], total_energies[max_energy_idx]),
+                xytext=(10, 10), textcoords='offset points',
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.7),
+                arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
+    
+    plt.savefig("CNT_energy_storage/output/energy_vs_twist.png", dpi=300, bbox_inches='tight')
     # plt.show() # Disabled to not show the plot, only save it.
 
     # --- Create Animation ---
