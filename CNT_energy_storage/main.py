@@ -3,6 +3,9 @@ from ase.build import nanotube
 from ase import Atoms
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.animation import FuncAnimation
+from matplotlib.colors import Normalize
+from matplotlib.cm import coolwarm
 
 # --- Simulation Parameters ---
 # --- CNT Geometry ---
@@ -12,6 +15,7 @@ length = 4  # Number of unit cells along the tube axis
 
 # --- Mechanical Deformation ---
 twist_angle = 0.05  # Radians of twist per Ångström along the z-axis
+twist_angles = np.linspace(0, 0.1, 50) # A range of twist angles for the simulation
 
 # --- Morse Potential Parameters for C-C Bond ---
 # These parameters define the Morse potential for the Carbon-Carbon bond interactions.
@@ -64,45 +68,95 @@ def twist_cnt(cnt: Atoms, twist_angle):
 # --- Compute total energy from Morse potential ---
 def compute_energy(cnt: Atoms, cutoff):
     positions = cnt.get_positions()
-    energy = 0.0
     bonds = []
     for i in range(len(cnt)):
-        for j in range(i+1, len(cnt)):
+        for j in range(i + 1, len(cnt)):
             r = np.linalg.norm(positions[i] - positions[j])
             if r < cutoff:  # nearest neighbors
-                energy += morse_potential(r)
-                bonds.append((i, j))
-    return energy, bonds
+                bond_energy = morse_potential(r)
+                bonds.append({'indices': (i, j), 'energy': bond_energy, 'length': r})
+    
+    total_energy = sum(b['energy'] for b in bonds)
+    return total_energy, bonds
 
 # --- Visualization ---
-def plot_cnt(cnt: Atoms, bonds, title="CNT Structure"):
+def plot_cnt(ax, cnt: Atoms, bonds, title="CNT Structure", max_energy=1.0):
     positions = cnt.get_positions()
     x, y, z = positions[:, 0], positions[:, 1], positions[:, 2]
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+    ax.clear()
     ax.scatter(x, y, z, c='k', s=20)
 
-    for (i, j) in bonds:
-        ax.plot([x[i], x[j]], [y[i], y[j]], [z[i], z[j]], c='b', lw=1)
+    # Handle normalization for bond energy coloring
+    if bonds:
+        energies = [b['energy'] for b in bonds]
+        min_energy = min(energies)
+        max_energy = max(energies)
+        
+        # Handle case where all energies are the same
+        if min_energy == max_energy:
+            max_energy = min_energy + 1e-6
+    else:
+        min_energy, max_energy = 0.0, 1.0
+    
+    norm = Normalize(vmin=min_energy, vmax=max_energy)
+
+    for bond in bonds:
+        i, j = bond['indices']
+        energy = bond['energy']
+        color = coolwarm(norm(energy))
+        ax.plot([x[i], x[j]], [y[i], y[j]], [z[i], z[j]], color=color, lw=1)
 
     ax.set_xlabel("X (Å)")
     ax.set_ylabel("Y (Å)")
     ax.set_zlabel("Z (Å)")
     ax.set_title(title)
-    plt.show()
 
 # --- Main execution ---
 if __name__ == "__main__":
-    # Build CNT
-    cnt = build_cnt(n=n, m=m, length=length)
+    # Build base CNT
+    base_cnt = build_cnt(n=n, m=m, length=length)
 
-    # Twist CNT
-    cnt_twisted = twist_cnt(cnt, twist_angle=twist_angle)
+    # --- Data Collection Loop ---
+    animation_frames = []
+    total_energies = []
+    max_bond_energy = 0
 
-    # Compute energy
-    energy, bonds = compute_energy(cnt_twisted, cutoff=cutoff)
-    print(f"Stored torsional energy = {energy:.4f} eV")
+    for angle in twist_angles:
+        cnt_twisted = base_cnt.copy()
+        cnt_twisted = twist_cnt(cnt_twisted, twist_angle=angle)
+        
+        energy, bonds = compute_energy(cnt_twisted, cutoff=cutoff)
+        
+        total_energies.append(energy)
+        animation_frames.append({'atoms': cnt_twisted, 'bonds': bonds})
+        
+        if bonds:
+            max_bond_energy = max(max_bond_energy, max(b['energy'] for b in bonds))
 
-    # Plot
-    plot_cnt(cnt_twisted, bonds, title=f"Twisted CNT (Energy={energy:.2f} eV)")
+    # --- Plot Energy vs. Twist Angle ---
+    plt.figure()
+    plt.plot(twist_angles, total_energies)
+    plt.xlabel("Twist Angle (rad/Å)")
+    plt.ylabel("Stored Torsional Energy (eV)")
+    plt.title("Energy vs. Twist Angle for CNT")
+    plt.grid(True)
+    plt.savefig("CNT_energy_storage/output/energy_vs_twist.png")
+    # plt.show() # Disabled to not show the plot, only save it.
+
+    # --- Create Animation ---
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection='3d')
+
+    def update(frame):
+        data = animation_frames[frame]
+        cnt = data['atoms']
+        bonds = data['bonds']
+        angle = twist_angles[frame]
+        energy = total_energies[frame]
+        plot_cnt(ax, cnt, bonds, title=f"Twisted CNT (Angle={angle:.3f} rad/Å, E={energy:.2f} eV)", max_energy=max_bond_energy)
+
+    ani = FuncAnimation(fig, update, frames=len(twist_angles), interval=100, repeat=True)
+    
+    # Show the interactive animation
+    plt.show()
