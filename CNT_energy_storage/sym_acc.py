@@ -15,8 +15,8 @@ length = 10  # Number of unit cells along the tube axis
 
 # --- Mechanical Deformation ---
 twist_angle = 0.05  # Radians of twist per Ångström along the z-axis
-max_twist = 0.15  # Maximum twist angle for simulation
-num_frames = 60   # Number of frames for animation
+max_twist = 0.1  # Maximum twist angle for simulation
+num_frames = 300   # Number of frames for animation
 twist_angles = np.linspace(0, max_twist, num_frames) # A range of twist angles for the simulation
 
 # --- Morse Potential Parameters for C-C Bond ---
