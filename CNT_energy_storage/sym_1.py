@@ -8,7 +8,7 @@ from matplotlib.colors import Normalize
 from matplotlib.cm import coolwarm
 
 n = 6; m = 6; length = 10
-D_e = 7.37; a = 2.625; r0 = 1.42
+D_e = 3.9; a = 2.625; r0 = 1.42
 num_frames = 120
 max_twist_angle = 0.5  # radians total twist applied to ends
 twist_angles = np.linspace(0, max_twist_angle, num_frames)

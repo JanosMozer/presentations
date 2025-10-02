@@ -9,20 +9,20 @@ from matplotlib.cm import coolwarm
 
 # --- Simulation Parameters ---
 # --- CNT Geometry ---
-n = 6 # Chirality index n
-m = 6  # Chirality index m
-length = 10  # Number of unit cells along the tube axis
+n = 4 # Chirality index n
+m = 4  # Chirality index m
+length = 20  # Number of unit cells along the tube axis
 
 # --- Mechanical Deformation ---
 twist_angle = 0.05  # Radians of twist per Ångström along the z-axis
 max_twist = 0.1  # Maximum twist angle for simulation
-num_frames = 300   # Number of frames for animation
+num_frames = 400   # Number of frames for animation
 twist_angles = np.linspace(0, max_twist, num_frames) # A range of twist angles for the simulation
 
 # --- Morse Potential Parameters for C-C Bond ---
 # These parameters define the Morse potential for the Carbon-Carbon bond interactions.
 # The Morse potential is a model for the potential energy of a diatomic molecule.
-D_e = 6.0  # eV, bond dissociation energy. This is the depth of the potential well.
+D_e = 3.9  # eV, bond dissociation energy. This is the depth of the potential well.
 a = 2.0    # 1/Å, stiffness parameter. This controls the width of the potential well.
 r0 = 1.42  # Å, equilibrium bond length. The distance between atoms at which the potential energy is at a minimum.
 

@@ -8,15 +8,15 @@ from matplotlib.cm import coolwarm
 
 # --- Simulation Parameters ---
 # --- CNT Geometry ---
-n = 6  # Chirality index n
-m = 6  # Chirality index m
+n = 3  # Chirality index n
+m = 3  # Chirality index m
 length = 10  # Number of unit cells along the tube axis
 
 # --- Mechanical Deformation ---
 twist_angle = 0  # Radians of twist per Ångström along the z-axis
 
 # --- Morse Potential Parameters for C-C Bond ---
-D_e = 6.0  # eV, bond dissociation energy
+D_e = 3.9  # eV, bond dissociation energy
 a = 2.0    # 1/Å, stiffness parameter
 r0 = 1.42  # Å, equilibrium bond length
 
