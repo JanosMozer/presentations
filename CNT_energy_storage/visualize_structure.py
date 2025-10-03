@@ -8,9 +8,9 @@ from matplotlib.cm import coolwarm
 
 # --- Simulation Parameters ---
 # --- CNT Geometry ---
-n = 3  # Chirality index n
-m = 3  # Chirality index m
-length = 10  # Number of unit cells along the tube axis
+n = 5  # Chirality index n
+m = 6  # Chirality index m
+length = 2  # Number of unit cells along the tube axis
 
 # --- Mechanical Deformation ---
 twist_angle = 0  # Radians of twist per Ångström along the z-axis
